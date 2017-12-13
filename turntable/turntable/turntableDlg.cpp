@@ -61,7 +61,6 @@ void CturntableDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_MSCOMM1, m_mscom);
-	//  DDX_Text(pDX, IDC_EDIT1, m_angle);
 	DDX_Text(pDX, IDC_EDIT1, m_currentAngle);
 	DDX_Text(pDX, IDC_EDIT3, m_speed);
 	DDX_Text(pDX, IDC_EDIT2, m_targetangle);
@@ -134,7 +133,6 @@ BOOL CturntableDlg::OnInitDialog()
 		MessageBox("串口2打开失败");
 	}
 	SetManual();
-	//ReadCurrentAngle();
 	SetTimer(1,200,NULL);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -194,7 +192,7 @@ void CturntableDlg::SetManual()
 	BYTE commanddata;
 	CByteArray databuf;
 	char crc[3];
-	databuf.SetSize(19);	
+	databuf.SetSize(19);//设置手动模式	
 	databuf.SetAt(0,64);
 	databuf.SetAt(1,48);
 	databuf.SetAt(2,49);
@@ -326,7 +324,6 @@ void CturntableDlg::ReadCurrentAngle()
 	float angle=temp/10.0f;
 	m_currentAngle.Format("%.1f°",angle);
 	SetDlgItemText(IDC_EDIT1,m_currentAngle);
-	//UpdateData(false);
 }
 void CturntableDlg::OnTimer(UINT_PTR nIDEvent)
 {
@@ -841,7 +838,7 @@ void CturntableDlg::OnBnClickedOk()
 		m_mscom.put_PortOpen(false); 
 	CDialogEx::OnOK();
 }
-void CturntableDlg::OnBnClickedButton1()
+void CturntableDlg::OnBnClickedButton1()//顺时针转
 {
 	// TODO: 在此添加控件通知处理程序代码
 	CString str;
@@ -859,7 +856,7 @@ void CturntableDlg::OnBnClickedButton1()
 		GetDlgItem(IDC_BUTTON1)->SetWindowTextA("顺时针转");
 	}
 }
-void CturntableDlg::OnBnClickedButton2()
+void CturntableDlg::OnBnClickedButton2()//逆时针转
 {
 	// TODO: 在此添加控件通知处理程序代码
 	CString str;
@@ -877,14 +874,14 @@ void CturntableDlg::OnBnClickedButton2()
 		GetDlgItem(IDC_BUTTON2)->SetWindowTextA("逆时针转");
 	}
 }
-void CturntableDlg::OnBnClickedButton3()
+void CturntableDlg::OnBnClickedButton3()//停止转动
 {
 	// TODO: 在此添加控件通知处理程序代码
 	StopRotate();
 }
 
 
-void CturntableDlg::OnBnClickedButton4()
+void CturntableDlg::OnBnClickedButton4()//设置零度
 {
 	// TODO: 在此添加控件通知处理程序代码
 	CancelCurrentZero();
@@ -892,7 +889,7 @@ void CturntableDlg::OnBnClickedButton4()
 }
 
 
-void CturntableDlg::OnBnClickedButton5()
+void CturntableDlg::OnBnClickedButton5()//转台回零
 {
 	// TODO: 在此添加控件通知处理程序代码
 	StopRotateBacktoZero();
@@ -901,7 +898,7 @@ void CturntableDlg::OnBnClickedButton5()
 
 
 
-void CturntableDlg::OnBnClickedButton6()
+void CturntableDlg::OnBnClickedButton6()//转到指定角度
 {
 	// TODO: Add your control notification handler code here
 	m_targetangle=GetDlgItemInt(IDC_EDIT2);
