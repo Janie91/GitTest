@@ -51,10 +51,9 @@ END_MESSAGE_MAP()
 CturntableDlg::CturntableDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CturntableDlg::IDD, pParent)
 	, m_currentAngle(_T(""))
-	, m_speed(0)
+	, m_speed(120)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-	//  m_targetangle = 0;
 	m_targetangle = 0;
 }
 
@@ -65,9 +64,7 @@ void CturntableDlg::DoDataExchange(CDataExchange* pDX)
 	//  DDX_Text(pDX, IDC_EDIT1, m_angle);
 	DDX_Text(pDX, IDC_EDIT1, m_currentAngle);
 	DDX_Text(pDX, IDC_EDIT3, m_speed);
-	//  DDX_Text(pDX, IDC_EDIT2, m_targetangle);
 	DDX_Text(pDX, IDC_EDIT2, m_targetangle);
-	DDV_MinMaxInt(pDX, m_targetangle, -180, 180);
 }
 
 BEGIN_MESSAGE_MAP(CturntableDlg, CDialogEx)
@@ -81,7 +78,6 @@ BEGIN_MESSAGE_MAP(CturntableDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON3, &CturntableDlg::OnBnClickedButton3)
 	ON_BN_CLICKED(IDC_BUTTON4, &CturntableDlg::OnBnClickedButton4)
 	ON_BN_CLICKED(IDC_BUTTON5, &CturntableDlg::OnBnClickedButton5)
-	ON_BN_CLICKED(IDC_BUTTON7, &CturntableDlg::OnBnClickedButton7)
 	ON_BN_CLICKED(IDC_BUTTON6, &CturntableDlg::OnBnClickedButton6)
 END_MESSAGE_MAP()
 
@@ -131,7 +127,6 @@ BOOL CturntableDlg::OnInitDialog()
     if(!m_mscom.get_PortOpen())
 	{
 		m_mscom.put_PortOpen(true);         //打开串口
-		MessageBox("串口2打开成功");
 	}
 	else
 	{
@@ -139,6 +134,7 @@ BOOL CturntableDlg::OnInitDialog()
 		MessageBox("串口2打开失败");
 	}
 	SetManual();
+	//ReadCurrentAngle();
 	SetTimer(1,200,NULL);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -279,10 +275,8 @@ void CturntableDlg::SetSpeed(int speed)
 		AfxMessageBox("设置速度操作出错!");
 	}
 }
-
-void CturntableDlg::OnTimer(UINT_PTR nIDEvent)
+void CturntableDlg::ReadCurrentAngle()
 {
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	BYTE commanddata;
 	CByteArray databuf;
 	char crc[3];
@@ -316,15 +310,28 @@ void CturntableDlg::OnTimer(UINT_PTR nIDEvent)
 	VARIANT retVal=m_mscom.get_Input();
 	CString str;
 	str=retVal.bstrVal;//因为串口返回的是字符串类型的，retVal的vt是VT_BSTR
+	if(str.Mid(5,2)!="00")
+	{
+		AfxMessageBox("读取角度操作出错!");
+	}
 	int temp;
 	CString anglestring;
-	anglestring.Append(str.Mid(7,1),4);
+	anglestring.Append(str.Mid(7,1));
+	anglestring.Append(str.Mid(7,1));
+	anglestring.Append(str.Mid(7,1));
+	anglestring.Append(str.Mid(7,1));
 	anglestring+=str.Mid(7,4);
 	sscanf_s(anglestring,"%X",&temp);
 	//是字符串，要化为数值，然后除以10才是角度
 	float angle=temp/10.0f;
 	m_currentAngle.Format("%.1f°",angle);
-	UpdateData(false);
+	SetDlgItemText(IDC_EDIT1,m_currentAngle);
+	//UpdateData(false);
+}
+void CturntableDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	ReadCurrentAngle();
 	CDialogEx::OnTimer(nIDEvent);
 }
 
@@ -746,7 +753,7 @@ void CturntableDlg::SetTargetAngle(int targetangle)
 	CByteArray databuf;
 	char crc[3];
 	char strangle[9];
-	databuf.SetSize(21);//设为自动
+	databuf.SetSize(21);//设置目标角度
 	databuf.SetAt(0,64);
 	databuf.SetAt(1,48);
 	databuf.SetAt(2,49);
@@ -756,7 +763,7 @@ void CturntableDlg::SetTargetAngle(int targetangle)
 	databuf.SetAt(6,50);
 	databuf.SetAt(7,55);
 	databuf.SetAt(8,52);
-	sprintf_s(strangle,"%08X",targetangle);
+	sprintf_s(strangle,"%08X",targetangle*10);//转换角度时有个10倍关系
 	databuf.SetAt(9,strangle[4]);
 	databuf.SetAt(10,strangle[5]);
 	databuf.SetAt(11,strangle[6]);
@@ -771,10 +778,10 @@ void CturntableDlg::SetTargetAngle(int targetangle)
 		commanddata^=databuf[i];
 	}
 	sprintf_s(crc,"%02X",commanddata);
-	databuf.SetAt(15,crc[0]);
-	databuf.SetAt(16,crc[1]);
-	databuf.SetAt(17,42);
-	databuf.SetAt(18,13);
+	databuf.SetAt(17,crc[0]);
+	databuf.SetAt(18,crc[1]);
+	databuf.SetAt(19,42);
+	databuf.SetAt(20,13);
 	m_mscom.put_Output(COleVariant(databuf));
 	Sleep(200);
 	VARIANT retVal=m_mscom.get_Input();
@@ -832,7 +839,6 @@ void CturntableDlg::OnBnClickedOk()
 	KillTimer(1);
 	if(m_mscom.get_PortOpen())
 		m_mscom.put_PortOpen(false); 
-	MessageBox("串口2已关闭");
 	CDialogEx::OnOK();
 }
 void CturntableDlg::OnBnClickedButton1()
@@ -840,6 +846,7 @@ void CturntableDlg::OnBnClickedButton1()
 	// TODO: 在此添加控件通知处理程序代码
 	CString str;
 	SetManual();
+	m_speed=GetDlgItemInt(IDC_EDIT3);
 	GetDlgItemTextA(IDC_BUTTON1,str);
 	if(str=="顺时针转")
 	{
@@ -857,6 +864,7 @@ void CturntableDlg::OnBnClickedButton2()
 	// TODO: 在此添加控件通知处理程序代码
 	CString str;
 	SetManual();
+	m_speed=GetDlgItemInt(IDC_EDIT3);
 	GetDlgItemTextA(IDC_BUTTON2,str);
 	if(str=="逆时针转")
 	{
@@ -892,18 +900,16 @@ void CturntableDlg::OnBnClickedButton5()
 }
 
 
-void CturntableDlg::OnBnClickedButton7()
-{
-	// TODO: Add your control notification handler code here
-	UpdateData(true);
-}
-
 
 void CturntableDlg::OnBnClickedButton6()
 {
 	// TODO: Add your control notification handler code here
+	m_targetangle=GetDlgItemInt(IDC_EDIT2);
+	m_speed=GetDlgItemInt(IDC_EDIT3);
 	SetAuto();
+	Sleep(200);
 	StopRotate();
+	Sleep(100);
 	SetSpeed(m_speed);
 	SetTargetAngle(m_targetangle);
 	PositionStart();

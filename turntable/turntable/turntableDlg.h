@@ -33,6 +33,7 @@ protected:
 public:
 	CMscomm1 m_mscom;
 	void SetManual();
+	void ReadCurrentAngle();
 	void SetSpeed(int speed);
 	void RotateRight();
 	void StopRotateRight();
@@ -55,8 +56,6 @@ public:
 	afx_msg void OnBnClickedButton5();
 	CString m_currentAngle;
 	int m_speed;
-	afx_msg void OnBnClickedButton7();
-//	int m_targetangle;
-	afx_msg void OnBnClickedButton6();
 	int m_targetangle;
+	afx_msg void OnBnClickedButton6();
 };
